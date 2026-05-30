@@ -1,4 +1,3 @@
-#создай тут фоторедактор Easy Editor!
 import os
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QVBoxLayout, QHBoxLayout, QListWidget, QFileDialog, QMessageBox
 from PyQt5.QtCore import Qt
@@ -8,7 +7,7 @@ import random
 
 app = QApplication([])
 main_win = QWidget()
-main_win.resize(600, 300)
+main_win.resize(800, 600)  # Увеличен размер окна
 main_win.setWindowTitle("Easy Editor-простой редактор")
 
 # Стиль для сглаживания и цветных кнопок
@@ -36,9 +35,7 @@ main_win.setStyleSheet("""
         border-radius: 5px;
         color: white;
         padding: 5px;
-    }
-    QListWidget::item:selected {
-        background-color: #0078d7;
+        min-width: 200px;
     }
     QLabel {
         background-color: #3c3c3c;
@@ -46,12 +43,15 @@ main_win.setStyleSheet("""
         border-radius: 5px;
         color: white;
         padding: 10px;
+        min-height: 400px;
     }
 """)
 
-label = QLabel("Картинка")
+label = QLabel("Выберите изображение из списка слева")
 label.setAlignment(Qt.AlignCenter)
+label.setMinimumSize(400, 400)  # Установлен минимальный размер для метки
 list_widget = QListWidget()
+list_widget.setMinimumWidth(200)
 
 btn1 = QPushButton("📁 Папка")
 btn2 = QPushButton("↩️ Лево")
@@ -78,27 +78,32 @@ btn9.setStyleSheet("background-color: #3F51B5;")  # Индиго - размыт�
 btn10.setStyleSheet("background-color: #FF5722;") # Оранжево-красный - шум
 btn11.setStyleSheet("background-color: #F44336;") # Красный - сброс
 
-line1 = QVBoxLayout()
-line1.addWidget(btn1)
-line1.addWidget(list_widget)
-line2 = QHBoxLayout()
-line2.addWidget(btn2)
-line2.addWidget(btn3)
-line2.addWidget(btn4)
-line2.addWidget(btn5)
-line2.addWidget(btn6)
-line2.addWidget(btn7)
-line2.addWidget(btn8)
-line2.addWidget(btn9)
-line2.addWidget(btn10)
-line2.addWidget(btn11)
-line3 = QVBoxLayout()
-line3.addWidget(label)
-line3.addLayout(line2)
-line4 = QHBoxLayout()
-line4.addLayout(line1)
-line4.addLayout(line3)
-main_win.setLayout(line4)
+# Создание layout с правильными пропорциями
+left_layout = QVBoxLayout()
+left_layout.addWidget(btn1)
+left_layout.addWidget(list_widget)
+
+button_layout = QHBoxLayout()
+button_layout.addWidget(btn2)
+button_layout.addWidget(btn3)
+button_layout.addWidget(btn4)
+button_layout.addWidget(btn5)
+button_layout.addWidget(btn6)
+button_layout.addWidget(btn7)
+button_layout.addWidget(btn8)
+button_layout.addWidget(btn9)
+button_layout.addWidget(btn10)
+button_layout.addWidget(btn11)
+
+right_layout = QVBoxLayout()
+right_layout.addWidget(label)
+right_layout.addLayout(button_layout)
+
+main_layout = QHBoxLayout()
+main_layout.addLayout(left_layout, 1)  # 1 часть для списка файлов
+main_layout.addLayout(right_layout, 3)  # 3 части для изображения и кнопок
+
+main_win.setLayout(main_layout)
 
 workdir = ''
 
@@ -122,6 +127,10 @@ def showFilenamesList():
         list_widget.clear()
         for filename in filenames:
             list_widget.addItem(filename)
+        if filenames:
+            label.setText(f"Найдено {len(filenames)} изображений")
+        else:
+            label.setText("В выбранной папке нет изображений")
 
 class ImageProcessor():
     def __init__(self):
@@ -140,10 +149,19 @@ class ImageProcessor():
         
     def showImage(self, path):
         pixmapimage = QPixmap(path)
-        label_width, label_height = label.width(), label.height()
-        # Сглаживание при масштабировании
-        scaled_pixmap = pixmapimage.scaled(label_width, label_height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        label.setPixmap(scaled_pixmap)
+        # Получаем размеры метки с учетом отступов
+        label_width = label.width() - 20
+        label_height = label.height() - 20
+        
+        if label_width > 0 and label_height > 0:
+            # Сглаживание при масштабировании
+            scaled_pixmap = pixmapimage.scaled(label_width, label_height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            label.setPixmap(scaled_pixmap)
+        else:
+            # Если метка еще не имеет размера, используем оригинальное изображение с ограничением
+            scaled_pixmap = pixmapimage.scaled(400, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            label.setPixmap(scaled_pixmap)
+        
         label.setVisible(True)
         
     def save_image(self):
